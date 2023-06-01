@@ -1,13 +1,4 @@
-const properties = require("./json/properties.json");
-const users = require("./json/users.json");
-const { Pool } = require('pg');
-
-const pool = new Pool({
-  user: 'clayton',
-  password: '123',
-  host: 'localhost',
-  database: 'lightbnb'
-});
+const { query } = require('./index');
 
 /// Users
 /**
@@ -16,15 +7,14 @@ const pool = new Pool({
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = function(email) {
-  return pool
-    .query(`SELECT * FROM users
-      WHERE email = $1`, [email])
-    .then((result) => {
-      return result.rows[0];
-    })
-    .catch((err) => {
-      console.log(err.message);
-    });
+
+  const queryParams = [email];
+  const queryString = `SELECT * FROM users
+    WHERE email = $1`;
+
+  return query(queryString, queryParams).then((result) => {
+    return result.rows[0];
+  });
 };
 
 /**
@@ -33,15 +23,14 @@ const getUserWithEmail = function(email) {
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithId = function(id) {
-  return pool
-    .query(`SELECT * FROM users
-      WHERE id = $1`, [id]
-    )
+
+  const queryParams = [id];
+  const queryString = `SELECT * FROM users
+    WHERE id = $1`;
+
+  return query(queryString, queryParams)
     .then((result) => {
       return result.rows[0];
-    })
-    .catch((err) => {
-      console.log(err.message);
     });
 };
 
@@ -51,17 +40,17 @@ const getUserWithId = function(id) {
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser = function(user) {
-  return pool
-    .query(`
-      INSERT INTO users (name, email, password)
-      VALUES ($1, $2, $3)
-      RETURNING *;
-    `, [user.name, user.email, user.password])
+
+  const queryParams = [user.name, user.email, user.password];
+  const queryString = `
+    INSERT INTO users (name, email, password)
+    VALUES ($1, $2, $3)
+    RETURNING *;
+  `;
+
+  return query(queryString, queryParams)
     .then((result) => {
       return result.rows;
-    })
-    .catch((err) => {
-      console.log(err.message);
     });
 };
 
@@ -73,22 +62,22 @@ const addUser = function(user) {
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function(guestId, limit = 10) {
-  return pool
-    .query(`
-      SELECT reservations.id, properties.title, properties.cost_per_night, reservations.start_date, avg(rating) as average_rating, number_of_bedrooms, number_of_bathrooms, parking_spaces, thumbnail_photo_url
-      FROM reservations
-      JOIN properties ON reservations.property_id = properties.id
-      JOIN property_reviews ON properties.id = property_reviews.property_id
-      WHERE reservations.guest_id = $1
-      GROUP BY properties.id, reservations.id
-      ORDER BY reservations.start_date
-      LIMIT $2;
-    `, [guestId, limit])
-    .then((results) => {
-      return results.rows;
-    })
-    .catch((err) => {
-      console.log(err.message);
+
+  const queryParams = [guestId, limit];
+  const queryString = `
+    SELECT reservations.id, properties.title, properties.cost_per_night, reservations.start_date, avg(rating) as average_rating, number_of_bedrooms, number_of_bathrooms, parking_spaces, thumbnail_photo_url
+    FROM reservations
+    JOIN properties ON reservations.property_id = properties.id
+    JOIN property_reviews ON properties.id = property_reviews.property_id
+    WHERE reservations.guest_id = $1
+    GROUP BY properties.id, reservations.id
+    ORDER BY reservations.start_date
+    LIMIT $2;
+  `;
+
+  return query(queryString, queryParams)
+    .then((result) => {
+      return result.rows;
     });
 };
 
@@ -142,13 +131,9 @@ const getAllProperties = (options, limit = 10) => {
     LIMIT $${queryParams.length}
   `;
 
-  return pool
-    .query(queryString, queryParams)
+  return query(queryString, queryParams)
     .then((result) => {
       return result.rows;
-    })
-    .catch((err) => {
-      console.log(err.message);
     });
 };
 
@@ -166,14 +151,9 @@ const addProperty = function(property) {
     RETURNING *
   `;
 
-
-  return pool
-    .query(queryString, queryParams)
-    .then((results) => {
-      return results.rows;
-    })
-    .catch((err) => {
-      console.log(err.message);
+  return query(queryString, queryParams)
+    .then((result) => {
+      return result.rows;
     });
 };
 
